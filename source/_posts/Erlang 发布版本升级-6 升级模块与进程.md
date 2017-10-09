@@ -18,6 +18,8 @@ tags:
 
 # 进程模块关系
 
+我们知道,进程标示pid都是动态的,因此我们不可能在appup文件里面写这个进程的pid;所以我们想要通知一个进程做内部状态变更,只能通过某种方式让这些进程与模块建立关系.
+
 之前的章节我们有提到过,指令分两种:
 
 > OTP supports a set of **release handling instructions** that are used when creating .appup files. The release handler understands a subset of these, the **low-level** instructions. To make it easier for the user, there are also a number of **high-level** instructions, which are translated to low-level instructions by systools:make_relup.
@@ -38,7 +40,7 @@ tags:
 }.
 ```
 
-然后看看转换之后的relup:
+这是我们需要同步更新rus_gen_server这个代码模块的appup文件,然后看看转换之后的relup:
 
 ```erlang
 {"0.2.0",
@@ -165,6 +167,22 @@ maybe_supervisor_which_children(Proc, Name, Pid) ->
 * 拿到master下面的子进程,也就是顶级supervisor
 * 获取顶级supervisor下面的所有子进程
 * 子进程通过子进程规格定义里的Mods对应:`{Sup, Name, Pid, Mods}`
+
+通过上面的代码我们可以发现,在进行代码暂停之前,系统通过调用get_supervised_procs()找到应用下的sup,然后通过sup的内部状态获取子进程和它的规格定义,我们都知道,规格定义里面有指定了这个进程对应的模块:
+
+```erlang
+-type child_spec() :: #{id := child_id(),       % mandatory
+         start := mfargs(),      % mandatory
+         restart => restart(),   % optional
+         shutdown => shutdown(), % optional
+         type => worker(),       % optional
+         modules => modules()}.
+-type modules()  :: [module()] | 'dynamic'.
+```
+
+可以指定为一个列表也可以设置为dynamic,这种情况下一节再细谈,先来说说模块列表的情况:
+
+最后get_supervised_procs()会返回这样一个列表[{Sup, Name, Pid, Mods},...],可以看到列表里面已经包含了pid和Mods,也就建立起了对应关系了,但是这里有个前提条件,就是你的进程必须被这个应用下的sup进程管理,如果不是的话系统是不可能找到他们之间的对应关系的.
 
 这样一个流程之后,就获得了一个进程与多个模块的一对多对应关系,我们再看会代码:
 
@@ -361,6 +379,11 @@ get_modules(MSL) ->
 可以看到gen_event实现了这个方法,并返回了需要的模块列表;所以大家下次如果在supervisor用到gen_event或者类似的会变更回调模块的进程的时候,记得要填dynamic,不然你的代码更新会失败的.
 
 -----
+
+通过本章我们了解到:
+
+- 进程必须在应用的进程树的管理下才能在模块代码被更新的时候执行状态变更回调.
+- 如果回调模块是动态的,也需要sup的子规格里指定为dynamic.
 
 从这一章中我们了解到,同步指令最后会被转换成调用sys模块的对应执行方法,下一章节我们会从源码的角度看一下sys模块的执行流程.
 

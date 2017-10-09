@@ -52,7 +52,7 @@ supervisor在我们热更中起到至关重要,而且设计到的内容比较多
 {update, Mod, static, default, {advanced,[]}, brutal_purge, brutal_purge, []};
 ```
 
-可以看到第三个字段明显不同gen_server的指令的是dynamic, 而supervisor的指令是static:
+可以看到第三个字段明显不同gen_server的指令的是**dynamic**, 而supervisor的指令是**static**:
 
 ```erlang
 {update, Mod, dynamic, default, Change, brutal_purge, brutal_purge, []};
@@ -61,7 +61,7 @@ supervisor在我们热更中起到至关重要,而且设计到的内容比较多
 
 我们再结合文档来看看:
 
-High-Level Instructions
+**High-Level Instructions**
 
 ```erlang
 {update, Mod}
@@ -81,7 +81,7 @@ High-Level Instructions
   DepMods = [Mod]
 ```
 
-第三个字段的定义为ModType,继续看文档关于ModType的定义解析:
+第三个字段的定义为**ModType**,继续看文档关于**ModType**的定义解析:
 
 > Defaults to dynamic. It specifies if the code is "dynamic", that is, if a process using the module spontaneously switches to new code, or if it is "static". When doing an advanced update and upgrade, the new version of a dynamic module is loaded before the process is asked to change code. When downgrading, the process is asked to change code before loading the new version. For static modules, the new version is loaded before the process is asked to change code, both in the case of upgrading and downgrading. Callback modules are dynamic.
 > 默认指定的是dynamic,当进行升级的时候,新版本模块会在执行change code前加载;当进行降级的时候,会先执行change code之后在加载新版本模块
