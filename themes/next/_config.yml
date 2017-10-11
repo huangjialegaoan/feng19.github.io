@@ -367,9 +367,9 @@ changyan:
 # You can get your appid and appkey from https://leancloud.cn
 # more info please open https://github.com/xCss/Valine
 valine:
-  enable: true
-  appid: VDj7hFAA8eL6I5UmENlytJhh-gzGzoHsz # your leancloud application appid
-  appkey: AOi8dJU8VtxgAuyaPcplC9lP # your leancloud application appkey
+  enable: false
+  appid: # your leancloud application appid
+  appkey: # your leancloud application appkey
   notify: false # mail notifier , https://github.com/xCss/Valine/wiki
   verify: false # Verification code
   placeholder: Comment input placeholder
@@ -471,9 +471,9 @@ rating:
 # Show number of visitors to each article.
 # You can visit https://leancloud.cn get AppID and AppKey.
 leancloud_visitors:
-  enable: false
-  app_id: #<app_id>
-  app_key: #<app_key>
+  enable: true
+  app_id: VDj7hFAA8eL6I5UmENlytJhh-gzGzoHsz
+  app_key: AOi8dJU8VtxgAuyaPcplC9lP 
 
 # Show PV/UV of the website/page with busuanzi.
 # Get more information on http://ibruce.info/2015/04/04/busuanzi/
