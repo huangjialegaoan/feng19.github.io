@@ -367,9 +367,9 @@ changyan:
 # You can get your appid and appkey from https://leancloud.cn
 # more info please open https://github.com/xCss/Valine
 valine:
-  enable: false
-  appid:  # your leancloud application appid
-  appkey:  # your leancloud application appkey
+  enable: true
+  appid: VDj7hFAA8eL6I5UmENlytJhh-gzGzoHsz # your leancloud application appid
+  appkey: AOi8dJU8VtxgAuyaPcplC9lP # your leancloud application appkey
   notify: false # mail notifier , https://github.com/xCss/Valine/wiki
   verify: false # Verification code
   placeholder: Comment input placeholder
@@ -386,8 +386,8 @@ valine:
 # Available value:
 #    button | slide
 # Warning: Baidu Share does not support https.
-baidushare:
-  type: button
+#baidushare:
+##  type: button
 
 # Share
 # This plugin is more useful in China, make sure you known how to use it.
