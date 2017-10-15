@@ -1,6 +1,6 @@
 ---
 title: Erlang 发布版本升级-3 升级发布版本工具讲解
-date: 2017/10/1 0:0:0
+date: 2017/10/1 0:0:3
 categories:
 - Erlang-Release-Upgrade
 tags:

@@ -1,6 +1,6 @@
 ---
 title: Erlang 发布版本升级-2 gen_server热更
-date: 2017/10/1 0:0:0
+date: 2017/10/1 0:0:2
 categories:
 - Erlang-Release-Upgrade
 tags:

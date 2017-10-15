@@ -447,7 +447,9 @@ deploy_dev:
     - dockers
 ```
 
-这个阶段我们只针对`d_dev`这个分支,所以如果我们要部署或者升级`dev`环境,就只需要切换到这个分支然后合并最新的代码,最后推送这个分支到服务器,然后ci会帮你解决一切了,当然还是要通过我们写的脚本`ci_deploy.sh`来解决:
+这个阶段我们只针对`d_dev`这个分支,所以如果我们要部署或者升级`dev`环境,就只需要切换到这个分支然后合并最新的代码,最后推送这个分支到服务器,然后ci会帮你解决一切了,当然还是要通过我们写的脚本`ci_deploy.sh`来解决.
+
+### ci_deploy.sh
 
 ```shell
 #!/usr/bin/env bash
@@ -526,7 +528,7 @@ case $OLD_VSN in
 esac
 ```
 
-`ssh_get_vsn.sh`:
+### ssh_get_vsn.sh
 
 ```shell
 #!/usr/bin/env bash

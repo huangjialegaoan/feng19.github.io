@@ -1,6 +1,6 @@
 ---
 title: Erlang 发布版本升级-5 supervisor更新说明
-date: 2017/10/1 0:0:0
+date: 2017/10/1 0:0:5
 categories:
 - Erlang-Release-Upgrade
 tags:

@@ -1,6 +1,6 @@
 ---
 title: Erlang 发布版本升级-4 升级指令讲解
-date: 2017/10/1 0:0:0
+date: 2017/10/1 0:0:4
 categories:
 - Erlang-Release-Upgrade
 tags:
