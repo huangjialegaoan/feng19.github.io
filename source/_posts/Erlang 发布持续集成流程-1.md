@@ -276,10 +276,11 @@ epmd:
     IsCI = os:getenv("CI_COMMIT_SHA") =/= false,
     IsRelup = os:getenv("RELUP_TAR") =/= false,
 
-    CreateGameIdProfileFun =
+    ChangeProfileFun =
         fun(test, ProfileConfig0) -> {test, ProfileConfig0};
             (ProfileName, ProfileConfig0) ->
-                Relx0 = maps:get(relx, ProfileConfig0, []),
+                ProfileConfig1 = maps:from_list(ProfileConfig0),
+                Relx0 = maps:get(relx, ProfileConfig1, []),
                 Relx2 =
                     case IsCI of
                         false -> Relx0;
@@ -294,20 +295,21 @@ epmd:
                             Relx3 = lists:keystore(include_erts, 1, Relx2, {include_erts, false}),
                             lists:keystore(system_libs, 1, Relx3, {system_libs, false})
                     end,
-                ProfileConfig = maps:to_list(ProfileConfig0#{relx => Relx}),
+                ProfileConfig = maps:to_list(ProfileConfig1#{relx => Relx}),
                 {ProfileName, ProfileConfig}
         end,
 
     Profiles0 = proplists:get_value(profiles, CONFIG_1, []),
-    Profiles = [CreateGameIdProfileFun(RebarProfile, maps:from_list(ProfileConfig))
-        || {RebarProfile, ProfileConfig} <- Profiles0, RebarProfile =/= test] ++ Profiles0,
+    Profiles = [ChangeProfileFun(RebarProfile, ProfileConfig) ||
+        {RebarProfile, ProfileConfig} <- Profiles0],
     CONFIG_2 = lists:keystore(profiles, 1, CONFIG_1, {profiles, Profiles}),
+    {_, CONFIG_3} = ChangeProfileFun(none, CONFIG_2),
 
     LAST_CONFIG =
         case IsCI of
-            false -> CONFIG_2;
+            false -> CONFIG_3;
             _ ->
-                lists:keystore(global_rebar_dir, 1, CONFIG_2, {global_rebar_dir, "_build/rebar3"})
+                lists:keystore(global_rebar_dir, 1, CONFIG_3, {global_rebar_dir, "_build/rebar3"})
         end,
 %%    io:format("~n~p~n", [LAST_CONFIG]),
     LAST_CONFIG.
