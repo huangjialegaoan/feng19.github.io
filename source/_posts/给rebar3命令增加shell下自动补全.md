@@ -1,5 +1,5 @@
 ---
-title: erlang-solutions-国内镜像地址
+title: 给rebar3命令增加shell下自动补全
 date: 2019/1/16 15:30:00
 categories:
 - other
