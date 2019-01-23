@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="erlang,release upgrade," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="插件虽然能帮助我们很方便的生成appup文件,但是如果你想要在升级的时候执行一下你的升级mnesia的record数据结构方法,插件不能分析出来我们要做这个的. 所以插件只能帮我们做其中一部分工作而已,另外一部分需要我们自己去处理,因此我们也需要对appup里面的指令进行进一步的学习.  预备知识先来看看官方对于appup文件的描述:  The application upgrade file d">
+<meta name="keywords" content="erlang,release upgrade">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Erlang 发布版本升级-4 升级指令讲解">
+<meta property="og:url" content="https://feng19.github.io/2017/10/01/Erlang 发布版本升级-4 升级指令讲解/index.html">
+<meta property="og:site_name" content="在路上">
+<meta property="og:description" content="插件虽然能帮助我们很方便的生成appup文件,但是如果你想要在升级的时候执行一下你的升级mnesia的record数据结构方法,插件不能分析出来我们要做这个的. 所以插件只能帮我们做其中一部分工作而已,另外一部分需要我们自己去处理,因此我们也需要对appup里面的指令进行进一步的学习.  预备知识先来看看官方对于appup文件的描述:  The application upgrade file d">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-01-23T11:21:34.818Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Erlang 发布版本升级-4 升级指令讲解">
+<meta name="twitter:description" content="插件虽然能帮助我们很方便的生成appup文件,但是如果你想要在升级的时候执行一下你的升级mnesia的record数据结构方法,插件不能分析出来我们要做这个的. 所以插件只能帮我们做其中一部分工作而已,另外一部分需要我们自己去处理,因此我们也需要对appup里面的指令进行进一步的学习.  预备知识先来看看官方对于appup文件的描述:  The application upgrade file d">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://feng19.github.io/2017/10/01/Erlang 发布版本升级-4 升级指令讲解/"/>
+
+
+
+<link rel="stylesheet" href="https://cdn.bootcss.com/mermaid/6.0.0/mermaid.min.css">
+
+
+  <title>Erlang 发布版本升级-4 升级指令讲解 | 在路上</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">在路上</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">On the road!</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://feng19.github.io/2017/10/01/Erlang 发布版本升级-4 升级指令讲解/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="feng19">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="在路上">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Erlang 发布版本升级-4 升级指令讲解</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-01T00:00:04+00:00">
+                2017-10-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Erlang-Release-Upgrade/" itemprop="url" rel="index">
+                    <span itemprop="name">Erlang-Release-Upgrade</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/10/01/Erlang 发布版本升级-4 升级指令讲解/" class="leancloud_visitors" data-flag-title="Erlang 发布版本升级-4 升级指令讲解">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>插件虽然能帮助我们很方便的生成appup文件,但是如果你想要在升级的时候执行一下你的升级mnesia的record数据结构方法,插件不能分析出来我们要做这个的.</p>
+<p>所以插件只能帮我们做其中一部分工作而已,另外一部分需要我们自己去处理,因此我们也需要对appup里面的指令进行进一步的学习.</p>
+<hr>
+<h1 id="预备知识"><a href="#预备知识" class="headerlink" title="预备知识"></a>预备知识</h1><p>先来看看官方对于appup文件的描述:</p>
+<blockquote>
+<p>The application upgrade file defines how an application is upgraded or downgraded in a running system.<br>This file is used by the functions in <a href="http://erlang.org/doc/man/systools.html" target="_blank" rel="external">systools</a> when generating a release upgrade file relup.<br>.appup文件是定义运行中的系统的应用怎么升级和降级,文件后期会被转成.relup 文件</p>
+</blockquote>
+<p>之前我们也看过appup文件的内容了,大概是长这个样子:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="comment">%% appup generated for rus_rel by rebar3_appup_plugin (2017/09/18 14:46:53)</span></div><div class="line">&#123; <span class="string">"0.2.0"</span>,</div><div class="line">    [&#123; <span class="string">"0.1.0"</span>,</div><div class="line">        [&#123;update,rus_gen_server,&#123;advanced,[]&#125;,brutal_purge,brutal_purge,[]&#125;] &#125;],</div><div class="line">    [&#123; <span class="string">"0.1.0"</span>,</div><div class="line">        [&#123;update,rus_gen_server,&#123;advanced,[]&#125;,brutal_purge,brutal_purge,[]&#125;] &#125;]</div><div class="line">&#125;.</div></pre></td></tr></table></figure>
+<p>现在再来看看它的格式定义:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&#123;Vsn,</div><div class="line">  [&#123;UpFromVsn, Instructions&#125;, ...],</div><div class="line">  [&#123;DownToVsn, Instructions&#125;, ...]&#125;.</div></pre></td></tr></table></figure>
+<blockquote>
+<p>Vsn = string()<br>Current application version.<br>UpFromVsn = string() | binary()<br>An earlier application version to upgrade from. If it is a string, it is interpreted as a specific version number. If it is a binary, it is interpreted as a regular expression that can match multiple version numbers.<br>DownToVsn = string() | binary()<br>An earlier application version to downgrade to. If it is a string, it is interpreted as a specific version number. If it is a binary, it is interpreted as a regular expression that can match multiple version numbers.<br>Instructions<br>A list of release upgrade instructions, see <a href="http://erlang.org/doc/man/appup.html#Release%20Upgrade%20Instructions" target="_blank" rel="external">Release Upgrade Instructions</a>. It is recommended to use high-level instructions only. These are automatically translated to low-level instructions by systools when creating the relup file.</p>
+</blockquote>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&#123;Vsn, <span class="comment">%% Vsn 表示的是新版本</span></div><div class="line">  [&#123;UpFromVsn, Instructions&#125;, ...], <span class="comment">%% 第二个属性表示升级</span></div><div class="line">  [&#123;DownToVsn, Instructions&#125;, ...]  <span class="comment">%% 第三个表示降级</span></div><div class="line">&#125;.</div></pre></td></tr></table></figure>
+<p>UpFromVsn 表示 从 UpFromVsn 这个版本升级到 Vsn 需要做的指令(Instructions), 可以看到这是一个列表,表示可以支持多个版本</p>
+<p>DownToVsn 表示 从 Vsn 这个版本降级到 DownToVsn 需要做的指令(Instructions), 可以看到这也是一个列表,表示可以支持多个版本</p>
+<p>下面我们来看一下例子:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&#123;<span class="string">"2.0.0"</span>,</div><div class="line"> [&#123;<span class="string">"1.0.0"</span>, [&#123;load_module, m&#125;]&#125;], <span class="comment">%% 版本"1.0.0"升级到版本"2.0.0", 加载模块m</span></div><div class="line"> [&#123;<span class="string">"1.0.0"</span>, [&#123;load_module, m&#125;]&#125;] <span class="comment">%% 版本"2.0.0"降级到版本"1.0.0", 加载模块m</span></div><div class="line">&#125;.</div></pre></td></tr></table></figure>
+<p>从文档中可以看到如果UpFromVsn或者DownToVsn的值是binary类型的话,表示可以用正则表达式去匹配版本,可以为多个版本:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">&#123;<span class="string">"2.0.0"</span>,</div><div class="line"> [&#123;&lt;&lt;<span class="string">"1\\.[0-9]+\\.[0-9]+"</span>&gt;&gt;, [&#123;load_module, m&#125;]&#125;],  <span class="comment">%% 所有版本"1.*.*"升级到版本"2.0.0", 加载模块m</span></div><div class="line"> [&#123;&lt;&lt;<span class="string">"1\\.[0-9]+\\.[0-9]+"</span>&gt;&gt;, [&#123;load_module, m&#125;]&#125;]   <span class="comment">%% 版本"2.0.0"降级到所有版本"1.*.*", 加载模块m</span></div><div class="line">&#125;.</div></pre></td></tr></table></figure>
+<p>另外比较重要的一点是, <a href="http://erlang.org/doc/design_principles/release_handling.html" target="_blank" rel="external">官方文档</a>提到:</p>
+<blockquote>
+<p>It is thus recommended that code is changed in as small steps as possible, and always kept backwards compatible. 官方推荐每次更新版本尽可能使用每个小改动版本,用多个版本迭代更新来进行,并且保持向后兼容,利于版本回退.</p>
+</blockquote>
+<p>下面回到正题,来说说指令(Instructions)</p>
+<hr>
+<h1 id="指令-Instructions"><a href="#指令-Instructions" class="headerlink" title="指令(Instructions)"></a>指令(Instructions)</h1><blockquote>
+<p>OTP supports a set of release handling instructions that are used when creating .appup files. The release handler understands a subset of these, the low-levelinstructions. To make it easier for the user, there are also a number of high-levelinstructions, which are translated to low-level instructions by systools:make_relup.<br>Some of the most frequently used instructions are described in this section. The complete list of instructions is included in the appup(4) manual page in SASL.</p>
+</blockquote>
+<p>指令分为两种,普通(High-Level)指令和底层(Low-Level)指令的区别: 普通指令是提供给用户使用的,而底层指令是通过普通指令转换而来的.</p>
+<p>我们之前生产的*.appup文件, 会在版本发布前的relup阶段,通过调用ystools:make_relup将全部普通指令转换为底层指令.</p>
+<p>这个章节我们只是介绍了一些比较常用到的指令,另外还有很多指令大家可以去这个<a href="http://erlang.org/doc/man/appup.html" target="_blank" rel="external">连接</a>获取更加详细的文档.</p>
+<ol>
+<li><p>简单代码热更指令:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&#123;load_module, Module&#125;</div></pre></td></tr></table></figure>
+<p>这个指令的作用就跟我们之前在eshell里面执行l(Module).一样</p>
+</li>
+</ol>
+<ol>
+<li><p>同步代码热更指令:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&#123;update, Module, &#123;advanced, Extra&#125;&#125;</div><div class="line">&#123;update, Module, supervisor&#125;</div></pre></td></tr></table></figure>
+<p>可以看到这里有两个:第一个是更新进程内部状态的,而第二个是专门提供给supervisor跟新sup进程内部状态的;之后我会说一下他们的区别.</p>
+</li>
+</ol>
+<ol>
+<li>应用(application)指令:</li>
+</ol>
+<ul>
+<li>{add_application, app} - 增加app应用-根据relup自动生成</li>
+<li>{remove_application, app} - 删除app应用-根据relup自动生成</li>
+<li>{restart_application, app} - 重启app应用</li>
+</ul>
+<ol>
+<li><p>启动关闭进程指令:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&#123;start, [Mod]&#125;  <span class="comment">%% 启动</span></div><div class="line">  Mod = atom()</div></pre></td></tr></table></figure>
+<p>内部通过执行方法supervisor:restart_child/2,启动所有使用Mod的进程.</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&#123;stop, [Mod]&#125;</div><div class="line">  Mod = atom()</div></pre></td></tr></table></figure>
+<p>内部通过执行方法supervisor:terminate_child/2,关闭所有使用Mod的进程.</p>
+</li>
+</ol>
+<ol>
+<li><p>执行指令:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">&#123;apply, &#123;M, F, A&#125;&#125;</div><div class="line">  M = F = atom()</div><div class="line">  A = [term()]</div></pre></td></tr></table></figure>
+<p>内部实现就是apply(M, F, A).</p>
+</li>
+</ol>
+<ol>
+<li><p>更新配置:</p>
+<p>这个并不需要指令,但是我们的配置发生变化了怎么办呢?</p>
+<p>文档告诉我们:</p>
+<ul>
+<li>Module is the application callback module as defined by the mod key in the .appfile.</li>
+<li>Changed and New are lists of {Par,Val} for all changed and added configuration parameters, respectively.</li>
+<li>Removed is a list of all parameters Par that have been removed.</li>
+</ul>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="comment">%% 只要在应用回调模块实现config_change/3方法,在更新的时候,otp就会回调这个方法</span></div><div class="line">Module:config_change(Changed, New, Removed).</div><div class="line"><span class="comment">%% Changed-有修改的配置 和 New-新增的配置 都是键值对列表[&#123;Par,Val&#125;,...]</span></div><div class="line"><span class="comment">%% Removed-删除的配置 是所有键的列表[Par,...]</span></div></pre></td></tr></table></figure>
+</li>
+<li><p>非erlang代码的更新:</p>
+<p>官方并没有支持,但是给了一个解决方案,就是在erlang的code_change方法里先关闭旧的port然后再开启新的port.</p>
+</li>
+</ol>
+<hr>
+<p>这一章简单的介绍了一下各个指令的说明,看过官方文档的同学可能知道,supervisor进程更新方面官方文档上有很长的一段描述,所以我特此新开了一章关于supervisor进程的更新说明.</p>
+<p>今天就这样,玩得开心~</p>
+<p>end</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>梦想基金</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: block;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.png" alt="feng19 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.png" alt="feng19 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/erlang/" rel="tag"># erlang</a>
+          
+            <a href="/tags/release-upgrade/" rel="tag"># release upgrade</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/01/Erlang 发布版本升级-3 升级发布版本工具讲解/" rel="next" title="Erlang 发布版本升级-3 升级发布版本工具讲解">
+                <i class="fa fa-chevron-left"></i> Erlang 发布版本升级-3 升级发布版本工具讲解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/01/Erlang 发布版本升级-5 supervisor更新说明/" rel="prev" title="Erlang 发布版本升级-5 supervisor更新说明">
+                Erlang 发布版本升级-5 supervisor更新说明 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMTMwOS83ODU4"></div>
+    </div>
+  
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">feng19</p>
+              <p class="site-description motion-element" itemprop="description">程序路上 成长路上 梦想路上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/feng19" target="_blank" title="GitHub">
+                    
+                      <i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:feng_19@foxmail.com" target="_blank" title="E-Mail">
+                    
+                      <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#预备知识"><span class="nav-number">1.</span> <span class="nav-text">预备知识</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#指令-Instructions"><span class="nav-number">2.</span> <span class="nav-text">指令(Instructions)</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">feng19</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=63825826";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+<script type="text/javascript" src="https://cdn.bootcss.com/mermaid/6.0.0/mermaid.min.js"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("VDj7hFAA8eL6I5UmENlytJhh-gzGzoHsz", "AOi8dJU8VtxgAuyaPcplC9lP");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

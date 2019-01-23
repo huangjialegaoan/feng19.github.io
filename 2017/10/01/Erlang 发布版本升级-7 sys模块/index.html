@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="erlang,release upgrade," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="第二章的时候,我们已经接触过sys模块了,现在我们来进一步看一下源码的实现.  我们还是用回第二章的例子: 123456789101112131415161718192021222324-module(sync_code_reload).-behaviour(gen_server).-export([start/0, vsn/0]).-export([init/1, handle_call/3,">
+<meta name="keywords" content="erlang,release upgrade">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Erlang 发布版本升级-7 sys模块">
+<meta property="og:url" content="https://feng19.github.io/2017/10/01/Erlang 发布版本升级-7 sys模块/index.html">
+<meta property="og:site_name" content="在路上">
+<meta property="og:description" content="第二章的时候,我们已经接触过sys模块了,现在我们来进一步看一下源码的实现.  我们还是用回第二章的例子: 123456789101112131415161718192021222324-module(sync_code_reload).-behaviour(gen_server).-export([start/0, vsn/0]).-export([init/1, handle_call/3,">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-01-23T11:21:34.822Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Erlang 发布版本升级-7 sys模块">
+<meta name="twitter:description" content="第二章的时候,我们已经接触过sys模块了,现在我们来进一步看一下源码的实现.  我们还是用回第二章的例子: 123456789101112131415161718192021222324-module(sync_code_reload).-behaviour(gen_server).-export([start/0, vsn/0]).-export([init/1, handle_call/3,">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://feng19.github.io/2017/10/01/Erlang 发布版本升级-7 sys模块/"/>
+
+
+
+<link rel="stylesheet" href="https://cdn.bootcss.com/mermaid/6.0.0/mermaid.min.css">
+
+
+  <title>Erlang 发布版本升级-7 sys模块 | 在路上</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">在路上</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">On the road!</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://feng19.github.io/2017/10/01/Erlang 发布版本升级-7 sys模块/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="feng19">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="在路上">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Erlang 发布版本升级-7 sys模块</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-01T00:00:07+00:00">
+                2017-10-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Erlang-Release-Upgrade/" itemprop="url" rel="index">
+                    <span itemprop="name">Erlang-Release-Upgrade</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/10/01/Erlang 发布版本升级-7 sys模块/" class="leancloud_visitors" data-flag-title="Erlang 发布版本升级-7 sys模块">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>第二章的时候,我们已经接触过sys模块了,现在我们来进一步看一下源码的实现.</p>
+<hr>
+<p>我们还是用回第二章的例子:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">-module</span><span class="params">(sync_code_reload)</span>.</div><div class="line"><span class="keyword">-behaviour</span><span class="params">(gen_server)</span>.</div><div class="line"></div><div class="line"><span class="keyword">-export</span><span class="params">([start/<span class="number">0</span>, vsn/<span class="number">0</span>])</span>.</div><div class="line"><span class="keyword">-export</span><span class="params">([init/<span class="number">1</span>, handle_call/<span class="number">3</span>, handle_cast/<span class="number">2</span>, handle_info/<span class="number">2</span>, </span></div><div class="line"><span class="params">    terminate/<span class="number">2</span>, code_change/<span class="number">3</span>])</span>.</div><div class="line"></div><div class="line"><span class="keyword">-record</span><span class="params">(state, &#123;&#125;)</span>.</div><div class="line"><span class="function"><span class="title">start</span><span class="params">()</span> -&gt;</span></div><div class="line">    gen_server:start(?MODULE, [], []).</div><div class="line"><span class="function"><span class="title">vsn</span><span class="params">()</span> -&gt;</span> <span class="number">1</span>.</div><div class="line"><span class="function"><span class="title">init</span><span class="params">([])</span> -&gt;</span></div><div class="line">    &#123;ok, #state&#123;&#125;&#125;.</div><div class="line"><span class="function"><span class="title">handle_call</span><span class="params">(_Request, _From, State)</span> -&gt;</span></div><div class="line">    &#123;reply, ok, State&#125;.</div><div class="line"><span class="function"><span class="title">handle_cast</span><span class="params">(_Request, State)</span> -&gt;</span></div><div class="line">    &#123;noreply, State&#125;.</div><div class="line"><span class="function"><span class="title">handle_info</span><span class="params">(_Info, State)</span> -&gt;</span></div><div class="line">    &#123;noreply, State&#125;.</div><div class="line"><span class="function"><span class="title">terminate</span><span class="params">(_Reason, _State)</span> -&gt;</span></div><div class="line">    ok.</div><div class="line"><span class="function"><span class="title">code_change</span><span class="params">(_OldVsn, &#123;state&#125;, _Extra)</span> -&gt;</span></div><div class="line">    io:format(<span class="string">"old:~p, ex:~p~n"</span>, [_OldVsn, _Extra]),</div><div class="line">    &#123;ok, #state&#123;&#125;&#125;.</div></pre></td></tr></table></figure>
+<p>先从进程启动的位置开始切入:</p>
+<p>gen_server.erl:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">start_link</span><span class="params">(Mod, Args, Options)</span> -&gt;</span></div><div class="line">    gen:start(?MODULE, link, Mod, Args, Options).</div></pre></td></tr></table></figure>
+<p>进入gen模块最后会回调本模块的init_it方法:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">init_it</span><span class="params">(Starter, self, Name, Mod, Args, Options)</span> -&gt;</span></div><div class="line">    init_it(Starter, self(), Name, Mod, Args, Options);</div><div class="line"><span class="function"><span class="title">init_it</span><span class="params">(Starter, Parent, Name0, Mod, Args, Options)</span> -&gt;</span></div><div class="line">    Name = gen:name(Name0),</div><div class="line">    Debug = gen:debug_options(Name, Options),</div><div class="line">    <span class="keyword">case</span> <span class="keyword">catch</span> Mod:init(Args) <span class="keyword">of</span></div><div class="line">   &#123;ok, State&#125; -&gt;</div><div class="line">       proc_lib:init_ack(Starter, &#123;ok, self()&#125;),      </div><div class="line">       loop(Parent, Name, State, Mod, infinity, Debug);</div><div class="line">   &#123;ok, State, Timeout&#125; -&gt;</div><div class="line">       proc_lib:init_ack(Starter, &#123;ok, self()&#125;),      </div><div class="line">       loop(Parent, Name, State, Mod, Timeout, Debug);</div><div class="line">   &#123;stop, Reason&#125; -&gt;</div><div class="line">       <span class="comment">%% For consistency, we must make sure that the</span></div><div class="line">       <span class="comment">%% registered name (if any) is unregistered before</span></div><div class="line">       <span class="comment">%% the parent process is notified about the failure.</span></div><div class="line">       <span class="comment">%% (Otherwise, the parent process could get</span></div><div class="line">       <span class="comment">%% an 'already_started' error if it immediately</span></div><div class="line">       <span class="comment">%% tried starting the process again.)</span></div><div class="line">       gen:unregister_name(Name0),</div><div class="line">       proc_lib:init_ack(Starter, &#123;error, Reason&#125;),</div><div class="line">       exit(Reason);</div><div class="line">   ignore -&gt;</div><div class="line">       gen:unregister_name(Name0),</div><div class="line">       proc_lib:init_ack(Starter, ignore),</div><div class="line">       exit(normal);</div><div class="line">   &#123;'EXIT', Reason&#125; -&gt;</div><div class="line">       gen:unregister_name(Name0),</div><div class="line">       proc_lib:init_ack(Starter, &#123;error, Reason&#125;),</div><div class="line">       exit(Reason);</div><div class="line">   Else -&gt;</div><div class="line">       Error = &#123;bad_return_value, Else&#125;,</div><div class="line">       proc_lib:init_ack(Starter, &#123;error, Error&#125;),</div><div class="line">       exit(Error)</div><div class="line">    <span class="keyword">end</span>.</div></pre></td></tr></table></figure>
+<p>进入init_it之后会调用回调模块的init方法回去初始状态,然后进入loop:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">loop</span><span class="params">(Parent, Name, State, Mod, hibernate, Debug)</span> -&gt;</span></div><div class="line">    proc_lib:hibernate(?MODULE,wake_hib,[Parent, Name, State, Mod, Debug]);</div><div class="line"><span class="function"><span class="title">loop</span><span class="params">(Parent, Name, State, Mod, Time, Debug)</span> -&gt;</span></div><div class="line">    Msg = <span class="keyword">receive</span></div><div class="line">	      Input -&gt;</div><div class="line">		    Input</div><div class="line">	  <span class="keyword">after</span> Time -&gt;</div><div class="line">		  timeout</div><div class="line">	  <span class="keyword">end</span>,</div><div class="line">    decode_msg(Msg, Parent, Name, State, Mod, Time, Debug, false).</div></pre></td></tr></table></figure>
+<p>进入loop之后是等待消息,当接受到消息之后会进入decode_msg处理:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">decode_msg</span><span class="params">(Msg, Parent, Name, State, Mod, Time, Debug, Hib)</span> -&gt;</span></div><div class="line">    <span class="keyword">case</span> Msg <span class="keyword">of</span></div><div class="line">	&#123;system, From, Req&#125; -&gt;</div><div class="line">	    sys:handle_system_msg(Req, From, Parent, ?MODULE, Debug,</div><div class="line">				  [Name, State, Mod, Time], Hib);</div><div class="line">	&#123;'EXIT', Parent, Reason&#125; -&gt;</div><div class="line">	    terminate(Reason, Name, Msg, Mod, State, Debug);</div><div class="line">	_Msg <span class="keyword">when</span> Debug =:= [] -&gt;</div><div class="line">	    handle_msg(Msg, Parent, Name, State, Mod);</div><div class="line">	_Msg -&gt;</div><div class="line">	    Debug1 = sys:handle_debug(Debug, fun print_event/3,</div><div class="line">				      Name, &#123;in, Msg&#125;),</div><div class="line">	    handle_msg(Msg, Parent, Name, State, Mod, Debug1)</div><div class="line">    <span class="keyword">end</span>.</div></pre></td></tr></table></figure>
+<p>接受到系统消息<code>{system, From, Req}</code>会调用<code>sys:handle_system_msg</code>方法处理,如果是普通消息会进入<code>handle_msg</code>处理,处理完普通消息最后会回到<code>loop</code>,现在我们来看看<code>sys:suspend/1</code> 做了什么:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">suspend</span><span class="params">(Name)</span> -&gt;</span> send_system_msg(Name, suspend). <span class="comment">%% 发送一个系统消息到进程</span></div><div class="line">...</div><div class="line"><span class="function"><span class="title">send_system_msg</span><span class="params">(Name, Request)</span> -&gt;</span></div><div class="line">    <span class="keyword">case</span> <span class="keyword">catch</span> gen:call(Name, system, Request) <span class="keyword">of</span></div><div class="line">	&#123;ok,Res&#125; -&gt; Res;</div><div class="line">	&#123;'EXIT', Reason&#125; -&gt; exit(&#123;Reason, mfa(Name, Request)&#125;)</div><div class="line">    <span class="keyword">end</span>.</div></pre></td></tr></table></figure>
+<p>就是发送一个系统消息给进程,通过之前的分析,我们知道gen_server处理系统消息是通过调用<code>sys:handle_system_msg</code>方法来处理的,直接看调用<code>sys:handle_system_msg</code>方法:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">handle_system_msg</span><span class="params">(Msg, From, Parent, Mod, Debug, Misc, Hib)</span> -&gt;</span></div><div class="line">   handle_system_msg(running, Msg, From, Parent, Mod, Debug, Misc, Hib).</div><div class="line"></div><div class="line"><span class="function"><span class="title">handle_system_msg</span><span class="params">(SysState, Msg, From, Parent, Mod, Debug, Misc, Hib)</span> -&gt;</span></div><div class="line">    <span class="keyword">case</span> do_cmd(SysState, Msg, Parent, Mod, Debug, Misc) <span class="keyword">of</span> <span class="comment">%% Msg = suspend</span></div><div class="line">	&#123;suspended, Reply, NDebug, NMisc&#125; -&gt;</div><div class="line">	    _ = gen:reply(From, Reply),</div><div class="line">	    suspend_loop(suspended, Parent, Mod, NDebug, NMisc, Hib); <span class="comment">%% 进入suspend_loop</span></div><div class="line">	&#123;running, Reply, NDebug, NMisc&#125; -&gt;</div><div class="line">	    _ = gen:reply(From, Reply),</div><div class="line">            Mod:system_continue(Parent, NDebug, NMisc);</div><div class="line">	&#123;&#123;terminating, Reason&#125;, Reply, NDebug, NMisc&#125; -&gt;</div><div class="line">	    _ = gen:reply(From, Reply),</div><div class="line">	    Mod:system_terminate(Reason, Parent, NDebug, NMisc)</div><div class="line">    <span class="keyword">end</span>.</div></pre></td></tr></table></figure>
+<p>进入<code>do_cmd</code>:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">do_cmd</span><span class="params">(_, suspend, _Parent, _Mod, Debug, Misc)</span> -&gt;</span></div><div class="line">    &#123;suspended, ok, Debug, Misc&#125;;</div></pre></td></tr></table></figure>
+<p>返回一个状态<code>suspended</code>:然后进入<code>suspend_loop</code>:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="comment">%% 进入 suspend_loop 之后就停留在receive上,只处理系统消息和异常,不再处理其他消息也就是暂停处理其他消息了</span></div><div class="line"><span class="comment">%% 也就是从gen_server:loop转换到sys:suspend_loop</span></div><div class="line"><span class="function"><span class="title">suspend_loop</span><span class="params">(SysState, Parent, Mod, Debug, Misc, Hib)</span> -&gt;</span></div><div class="line">    <span class="keyword">case</span> Hib <span class="keyword">of</span></div><div class="line">	<span class="literal">true</span> -&gt;</div><div class="line">	   suspend_loop_hib(SysState, Parent, Mod, Debug, Misc, Hib);</div><div class="line">	_ -&gt;</div><div class="line">	    <span class="keyword">receive</span></div><div class="line">		&#123;system, From, Msg&#125; -&gt;</div><div class="line">		    handle_system_msg(SysState, Msg, From, Parent, Mod, Debug, Misc, Hib);</div><div class="line">		&#123;'EXIT', Parent, Reason&#125; -&gt;</div><div class="line">		    Mod:system_terminate(Reason, Parent, Debug, Misc)</div><div class="line">	    <span class="keyword">end</span></div><div class="line">    <span class="keyword">end</span>.</div></pre></td></tr></table></figure>
+<p>从源代码中我们可以看到 <code>sys:suspend/1</code>  的主要认为就是从<code>gen_server:loop</code>转换到<code>sys:suspend_loop</code> ,而这个方法只处理了系统消息和异常退出消息,其他消息是不出理的,其他消息会留在邮箱里,这也就完成了暂停了.</p>
+<p>这时候我们应该执行加载新代码模块进入vm:<code>l(sync_code_reload).</code>;然后再调用<code>sys:change_code/4</code> 通知到进程去回调模块的<code>code_change</code>方法对内部状态做相应的改变:</p>
+<p><code>sys.erl</code>:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">change_code</span><span class="params">(Name, Mod, Vsn, Extra)</span> -&gt;</span> <span class="comment">%% 仍然是发送系统消息</span></div><div class="line">    send_system_msg(Name, &#123;change_code, Mod, Vsn, Extra&#125;).</div><div class="line">...</div><div class="line"><span class="comment">%% 从handle_system_msg进入do_cmd</span></div><div class="line"><span class="function"><span class="title">do_cmd</span><span class="params">(suspended, &#123;change_code, Module, Vsn, Extra&#125;, _Parent,</span></span></div><div class="line"><span class="function"><span class="params">       Mod, Debug, Misc)</span> -&gt;</span></div><div class="line">    &#123;Res, NMisc&#125; = do_change_code(Mod, Module, Vsn, Extra, Misc), <span class="comment">%% 进入 do_change_code</span></div><div class="line">    &#123;suspended, Res, Debug, NMisc&#125;;</div><div class="line"><span class="function"><span class="title">do_cmd</span><span class="params">(SysState, Other, _Parent, _Mod, Debug, Misc)</span> -&gt;</span></div><div class="line">    &#123;SysState, &#123;error, &#123;unknown_system_msg, Other&#125;&#125;, Debug, Misc&#125;.</div><div class="line">...</div><div class="line"><span class="function"><span class="title">do_change_code</span><span class="params">(Mod, Module, Vsn, Extra, Misc)</span> -&gt;</span> <span class="comment">%% 这里 Mod=gen_server</span></div><div class="line">    <span class="keyword">case</span> <span class="keyword">catch</span> Mod:system_code_change(Misc, Module, Vsn, Extra) <span class="keyword">of</span></div><div class="line">	&#123;ok, NMisc&#125; -&gt; &#123;ok, NMisc&#125;;</div><div class="line">	Else -&gt; &#123;&#123;error, Else&#125;, Misc&#125;</div><div class="line">    <span class="keyword">end</span>.</div></pre></td></tr></table></figure>
+<p>在处理change_code的时候会先调用<code>gen_server:system_code_change/4</code>:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">system_code_change</span><span class="params">([Name, State, Mod, Time], _Module, OldVsn, Extra)</span> -&gt;</span></div><div class="line">    <span class="keyword">case</span> <span class="keyword">catch</span> Mod:code_change(OldVsn, State, Extra) <span class="keyword">of</span>  <span class="comment">%% 终于看到我们熟悉的code_change/3</span></div><div class="line">   &#123;ok, NewState&#125; -&gt; &#123;ok, [Name, NewState, Mod, Time]&#125;; <span class="comment">%% 使用返回的新的NewState</span></div><div class="line">   Else -&gt; Else</div><div class="line">    <span class="keyword">end</span>.</div><div class="line"><span class="comment">%% 用之前的例子来说这里 Mod=sync_code_reload</span></div></pre></td></tr></table></figure>
+<p>执行完code_change之后我们获得了新的内部状态,这样就避免了与新代码的冲突了,最后需要恢复一下进程,然后正常处理消息,调用<code>sys:resume</code>:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">resume</span><span class="params">(Name)</span> -&gt;</span> send_system_msg(Name, resume). <span class="comment">%% 同样是发送系统消息</span></div><div class="line">...</div><div class="line"><span class="function"><span class="title">handle_system_msg</span><span class="params">(SysState, Msg, From, Parent, Mod, Debug, Misc, Hib)</span> -&gt;</span></div><div class="line">    <span class="keyword">case</span> do_cmd(SysState, Msg, Parent, Mod, Debug, Misc) <span class="keyword">of</span>  <span class="comment">%% 进入do_cmd, Msg=resume</span></div><div class="line">	&#123;suspended, Reply, NDebug, NMisc&#125; -&gt;</div><div class="line">	    _ = gen:reply(From, Reply),</div><div class="line">	    suspend_loop(suspended, Parent, Mod, NDebug, NMisc, Hib);</div><div class="line">	&#123;running, Reply, NDebug, NMisc&#125; -&gt; <span class="comment">%% running</span></div><div class="line">	    _ = gen:reply(From, Reply),</div><div class="line">            Mod:system_continue(Parent, NDebug, NMisc);  <span class="comment">%% 回调system_continue, Mod=gen_server</span></div><div class="line">	&#123;&#123;terminating, Reason&#125;, Reply, NDebug, NMisc&#125; -&gt;</div><div class="line">	    _ = gen:reply(From, Reply),</div><div class="line">	    Mod:system_terminate(Reason, Parent, NDebug, NMisc)</div><div class="line">    <span class="keyword">end</span>.</div><div class="line">...</div><div class="line"><span class="function"><span class="title">do_cmd</span><span class="params">(_, resume, _Parent, _Mod, Debug, Misc)</span> -&gt;</span> <span class="comment">%% resume</span></div><div class="line">    &#123;running, ok, Debug, Misc&#125;; <span class="comment">%% 返回 running</span></div><div class="line"><span class="function"><span class="title">do_cmd</span><span class="params">(SysState, get_state, _Parent, Mod, Debug, Misc)</span> -&gt;</span></div><div class="line">    &#123;SysState, do_get_state(Mod, Misc), Debug, Misc&#125;;</div><div class="line">...</div></pre></td></tr></table></figure>
+<p>恢复状态为running后,会回调<code>gen_server:system_continue</code>方法:</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="title">system_continue</span><span class="params">(Parent, Debug, [Name, State, Mod, Time])</span> -&gt;</span> <span class="comment">%% 回调</span></div><div class="line">    loop(Parent, Name, State, Mod, Time, Debug). <span class="comment">%% 从新进入loop</span></div></pre></td></tr></table></figure>
+<p>这个方法主要做的是带着新的state进入loop,进入loop之后会正常的接受和处理消息.</p>
+<p>总结:</p>
+<p>我们可以看到sys的暂停只是将进程的处理方法从gen_server的loop的接受并处理全部消息切换到sys:suspend_loop方法,只处理系统消息,其他都不处理;这样也确保了在加载新代码之后到执行变更进程内部状态这段时间内不会收到其他消息,这样也不会造成因为代码的版本不同,内部状态数据格式不对而异常退出这样的事情发送了.</p>
+<p>到这来整个&lt;<erlang发布版本升级>&gt;的章节也到此为止了,有什么问题联系本人,谢谢大家!</erlang发布版本升级></p>
+<p>end</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div>梦想基金</div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: block;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="/images/wechatpay.png" alt="feng19 微信支付"/>
+        <p>微信支付</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="/images/alipay.png" alt="feng19 支付宝"/>
+        <p>支付宝</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/erlang/" rel="tag"># erlang</a>
+          
+            <a href="/tags/release-upgrade/" rel="tag"># release upgrade</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/01/Erlang 发布版本升级-6 升级模块与进程/" rel="next" title="Erlang 发布版本升级-6 升级模块与进程">
+                <i class="fa fa-chevron-left"></i> Erlang 发布版本升级-6 升级模块与进程
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/14/Erlang 发布持续集成流程-1/" rel="prev" title="Erlang 发布持续集成流程-1">
+                Erlang 发布持续集成流程-1 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  
+    <div class="comments" id="comments">
+      <div id="lv-container" data-id="city" data-uid="MTAyMC8zMTMwOS83ODU4"></div>
+    </div>
+  
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview-wrap sidebar-panel sidebar-panel-active">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">feng19</p>
+              <p class="site-description motion-element" itemprop="description">程序路上 成长路上 梦想路上</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">11</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+              
+                <span class="links-of-author-item">
+                  <a href="https://github.com/feng19" target="_blank" title="GitHub">
+                    
+                      <i class="fa fa-fw fa-github"></i>GitHub</a>
+                </span>
+              
+                <span class="links-of-author-item">
+                  <a href="mailto:feng_19@foxmail.com" target="_blank" title="E-Mail">
+                    
+                      <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                </span>
+              
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">feng19</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "//tajs.qq.com/stats?sId=63825826";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+<script type="text/javascript" src="https://cdn.bootcss.com/mermaid/6.0.0/mermaid.min.js"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+    <script type="text/javascript">
+      (function(d, s) {
+        var j, e = d.getElementsByTagName(s)[0];
+        if (typeof LivereTower === 'function') { return; }
+        j = d.createElement(s);
+        j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+        j.async = true;
+        e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    </script>
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("VDj7hFAA8eL6I5UmENlytJhh-gzGzoHsz", "AOi8dJU8VtxgAuyaPcplC9lP");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
