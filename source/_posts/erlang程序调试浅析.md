@@ -433,11 +433,11 @@ trace(pid) ->
 
 * 单元测试 
 
-  > <<Erlang趣学指南>>一书中24章 - Eunit: 单元测试框架
+  > Erlang趣学指南:24章 - Eunit: 单元测试框架
 
 * 集成测试 
 
-  > <<Erlang趣学指南>>一书中28章 - 不寻常的Common Test
+  > Erlang趣学指南:28章 - 不寻常的Common Test
 
 ### 治中
 
